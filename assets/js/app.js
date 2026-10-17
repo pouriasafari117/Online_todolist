@@ -1,7 +1,7 @@
 import {
   $, $$, uid, nowISO, clamp, debounce, CANDY, colorFor, escapeHtml,
   createVault, openVault, vaultToShareCode, shareCodeToVault, fingerprint,
-  encryptJSON, decryptJSON, encryptWithRawKey, decryptWithRawKey, randomHex,
+  encryptJSON, decryptJSON, createRememberedBundle, decryptWithRawKey, randomHex,
   GitHub, GhError, STR,
 } from "./lib.js";
 
@@ -18,6 +18,8 @@ const state = {
   editingId: null, pendingVault: null, online: navigator.onLine,
 };
 try { Object.assign(state.settings, JSON.parse(localStorage.getItem(LS.settings) || "{}")); } catch {}
+const motionPreference = matchMedia("(prefers-reduced-motion: reduce)");
+const isMotionReduced = () => state.settings.motion === "reduced" || motionPreference.matches;
 
 const t = (k) => (STR[state.settings.lang] || STR.fa)[k] || STR.fa[k] || k;
 const locale = () => (state.settings.lang === "fa" ? "fa-IR" : "en-US");
@@ -163,10 +165,19 @@ function changed() {
 }
 /* remembered-device unlock (device key never leaves this browser profile) */
 async function saveRemembered() {
-  let key = localStorage.getItem(LS.deviceKey);
-  if (!key) { key = randomHex(32); localStorage.setItem(LS.deviceKey, key); }
-  const blob = await encryptWithRawKey({ config: state.sync.config, passphrase: state.sync.passphrase }, key);
-  localStorage.setItem(LS.remembered, JSON.stringify(blob));
+  const { key, envelope } = await createRememberedBundle({ config: state.sync.config, passphrase: state.sync.passphrase });
+  localStorage.setItem(LS.deviceKey, key);
+  localStorage.setItem(LS.remembered, JSON.stringify(envelope));
+}
+function clearRemembered() {
+  localStorage.removeItem(LS.remembered);
+  localStorage.removeItem(LS.deviceKey);
+}
+function clearCredentialInputs() {
+  for (const id of ["tokenInput", "passInput", "pass2Input", "joinPassInput", "newPassInput", "newPass2Input"]) {
+    const input = document.getElementById(id);
+    if (input) input.value = "";
+  }
 }
 async function tryAutoUnlock() {
   const blobRaw = localStorage.getItem(LS.remembered); const key = localStorage.getItem(LS.deviceKey);
@@ -480,7 +491,7 @@ let particles = [], fxRunning = false;
 function sizeFx() { fx.width = innerWidth * devicePixelRatio; fx.height = innerHeight * devicePixelRatio; }
 addEventListener("resize", sizeFx); sizeFx();
 function confetti(anchorEl) {
-  if (state.settings.motion === "reduced") return;
+  if (isMotionReduced()) return;
   const r = anchorEl?.getBoundingClientRect();
   const cx = (r ? r.left + 30 : innerWidth / 2) * devicePixelRatio, cy = (r ? r.top + 20 : innerHeight / 3) * devicePixelRatio;
   for (let i = 0; i < 42; i++) {
@@ -604,12 +615,13 @@ $("#connectBtn").addEventListener("click", async () => {
         branch: defaultBranch, sha: existing?.sha, message: "sync: publish encrypted vault",
       });
     }
-    await saveRemembered();
+    if ($("#ownerRememberToggle").checked) await saveRemembered(); else clearRemembered();
     setSyncStatus("syncing");
     const remote = await pullData();
     if (remote) mergeData(remote);
     await pushData();
     setSyncStatus("synced"); state.sync.lastSync = Date.now();
+    clearCredentialInputs();
     closeDialog($("#connectDialog"));
     toast(t("toast.connected"), "success"); confetti(null);
     renderAll(); renderSync();
@@ -629,11 +641,12 @@ $("#joinBtn").addEventListener("click", async () => {
     state.sync.config = { repo: payload.repo, branch: payload.branch, path: payload.path, token: payload.token, encryptData: payload.encryptData !== false, deviceName: payload.deviceName || t("device.default"), vaultId: payload.vaultId };
     state.sync.passphrase = pass; state.sync.fp = await fingerprint(payload.vaultId);
     localStorage.setItem(LS.vault, JSON.stringify(state.pendingVault));
-    if ($("#rememberToggle").checked) await saveRemembered(); else localStorage.removeItem(LS.remembered);
+    if ($("#rememberToggle").checked) await saveRemembered(); else clearRemembered();
     setSyncStatus("syncing");
     const remote = await pullData();
     if (remote) mergeData(remote); else await pushData();
     setSyncStatus("synced"); state.sync.lastSync = Date.now();
+    clearCredentialInputs();
     closeDialog($("#connectDialog"));
     toast(t("toast.unlocked"), "success"); confetti(null);
     renderAll(); renderSync();
@@ -679,13 +692,15 @@ $("#passwordForm").addEventListener("submit", async (e) => {
     localStorage.setItem(LS.vault, JSON.stringify(vault));
     if (localStorage.getItem(LS.remembered)) await saveRemembered();
     await pushData(); // re-encrypt data with the new password
+    clearCredentialInputs();
     closeDialog($("#passwordDialog"));
     toast(t("toast.passChanged"), "success"); renderSync();
   } catch (ex) { showError(err, syncErrText(ex)); }
 });
 $("#disconnectBtn").addEventListener("click", async () => {
   if (!(await askConfirm(t("confirm.disconnect")))) return;
-  localStorage.removeItem(LS.vault); localStorage.removeItem(LS.remembered); localStorage.removeItem(LS.deviceKey);
+  localStorage.removeItem(LS.vault); clearRemembered();
+  clearCredentialInputs();
   state.sync.config = null; state.sync.passphrase = ""; state.pendingVault = null;
   setSyncStatus("demo"); persistLocal();
   closeDialog($("#settingsDialog"));
@@ -805,19 +820,29 @@ function buildSparkles() {
 }
 /* custom cursor + magnetic buttons */
 (function cursorFx() {
-  if (!matchMedia("(hover:hover) and (pointer:fine)").matches || state.settings.motion === "reduced") return;
+  if (!matchMedia("(hover:hover) and (pointer:fine)").matches) return;
   const cursor = $("#cursor"), ring = $(".cursor__ring"), dot = $(".cursor__dot");
-  let mx = -100, my = -100, rx = -100, ry = -100;
+  let mx = -100, my = -100, rx = -100, ry = -100, frame = 0;
+  function animateRing() {
+    frame = 0;
+    if (isMotionReduced()) return;
+    const dx = mx - rx, dy = my - ry;
+    rx += dx * 0.16; ry += dy * 0.16;
+    ring.style.transform = `translate(${rx}px,${ry}px)`;
+    if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) frame = requestAnimationFrame(animateRing);
+  }
   addEventListener("mousemove", (e) => {
+    if (isMotionReduced()) return;
     mx = e.clientX; my = e.clientY;
     dot.style.transform = `translate(${mx}px,${my}px)`;
     // gentle parallax on the ambient world
     const nx = (e.clientX / innerWidth - 0.5), ny = (e.clientY / innerHeight - 0.5);
     $("#sparkleField").style.transform = `translate(${nx * -14}px,${ny * -10}px)`;
     $(".world__grid").style.backgroundPosition = `${nx * 18}px ${ny * 14}px`;
+    if (!frame) frame = requestAnimationFrame(animateRing);
   }, { passive: true });
-  (function loop() { rx += (mx - rx) * 0.16; ry += (my - ry) * 0.16; ring.style.transform = `translate(${rx}px,${ry}px)`; requestAnimationFrame(loop); })();
   addEventListener("mousedown", (e) => {
+    if (isMotionReduced()) return;
     cursor.classList.add("is-down");
     const ripple = document.createElement("i");
     ripple.style.left = e.clientX + "px"; ripple.style.top = e.clientY + "px";
@@ -831,10 +856,16 @@ function buildSparkles() {
 /* mascot personality */
 (function mascotFx() {
   const m = $("#mascot"); if (!m) return;
-  const blink = () => { m.classList.add("is-blink"); setTimeout(() => m.classList.remove("is-blink"), 150); setTimeout(blink, 2200 + Math.random() * 3200); };
+  const blink = () => {
+    if (!isMotionReduced()) {
+      m.classList.add("is-blink"); setTimeout(() => m.classList.remove("is-blink"), 150);
+    }
+    setTimeout(blink, 2200 + Math.random() * 3200);
+  };
   setTimeout(blink, 1600);
   m.addEventListener("click", () => { m.classList.remove("is-happy"); void m.offsetWidth; m.classList.add("is-happy"); confetti(m); blip(990, 0.09, "triangle", 0.05); });
   addEventListener("mousemove", (e) => {
+    if (isMotionReduced()) return;
     const r = m.getBoundingClientRect(); if (!r.width) return;
     const dx = clamp((e.clientX - (r.left + r.width / 2)) / 26, -3.4, 3.4), dy = clamp((e.clientY - (r.top + r.height / 2)) / 26, -2.4, 2.4);
     $$(".mascot__eye i", m).forEach((p) => (p.style.transform = `translate(${dx}px,${dy}px)`));

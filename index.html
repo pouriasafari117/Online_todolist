@@ -539,6 +539,11 @@
             <span class="checkline__box"><svg class="ico"><use href="#i-check"></use></svg></span>
             <span><b data-i18n="connect.encrypt">داده‌ها رمزنگاری بشن</b><small data-i18n="connect.encryptHint">پیشنهاد می‌شه؛ حتی اگه مخزن عمومی باشه، متن کارها دیده نمی‌شه.</small></span>
           </label>
+          <label class="checkline checkline--small">
+            <input type="checkbox" id="ownerRememberToggle">
+            <span class="checkline__box"><svg class="ico"><use href="#i-check"></use></svg></span>
+            <span><b data-i18n="connect.remember">این دستگاه رو به خاطر بسپار</b><small data-i18n="connect.rememberHint">با روشن‌کردن، دفعه بعد بدون رمز باز می‌شه؛ فقط روی دستگاه شخصی و غیرمشترک.</small></span>
+          </label>
           <details class="advanced">
             <summary><svg class="ico"><use href="#i-sliders"></use></svg><span data-i18n="connect.advanced">تنظیمات پیشرفته</span><svg class="ico adv-chev"><use href="#i-chevron"></use></svg></summary>
             <div class="advanced__body">
@@ -560,7 +565,7 @@
             <span class="btn-spinner" aria-hidden="true"></span>
             <svg class="ico"><use href="#i-arrow"></use></svg>
           </button>
-          <p class="fine-print" data-i18n="connect.fineOwner">توکن فقط توی همین مرورگر و به‌صورت رمزنگاری‌شده داخل قفل سینک ذخیره می‌شه. هیچ‌جا ارسال نمی‌شه جز خود گیت‌هاب.</p>
+          <p class="fine-print" data-i18n="connect.fineOwner">توکن فقط برای درخواست‌های API به گیت‌هاب فرستاده می‌شه و داخل قفل رمزنگاری‌شده نگه داشته می‌شه. با روشن‌کردن «به خاطر بسپار»، یک نسخه‌ی رمزنگاری‌شده هم روی همین مرورگر می‌مونه.</p>
         </section>
 
         <section class="connect-pane" data-cpane="join">
@@ -581,9 +586,9 @@
             </div>
           </label>
           <label class="checkline checkline--small">
-            <input type="checkbox" id="rememberToggle" checked>
+            <input type="checkbox" id="rememberToggle">
             <span class="checkline__box"><svg class="ico"><use href="#i-check"></use></svg></span>
-            <span><b data-i18n="connect.remember">این دستگاه رو به خاطر بسپار</b><small data-i18n="connect.rememberHint">دفعه بعد بدون رمز باز می‌شه. روی دستگاه مشترک خاموشش کن.</small></span>
+            <span><b data-i18n="connect.remember">این دستگاه رو به خاطر بسپار</b><small data-i18n="connect.rememberHint">با روشن‌کردن، دفعه بعد بدون رمز باز می‌شه؛ فقط روی دستگاه شخصی و غیرمشترک.</small></span>
           </label>
           <div class="connect-error" id="joinError" role="alert" hidden></div>
           <button class="primary-btn primary-btn--wide" id="joinBtn" type="button">

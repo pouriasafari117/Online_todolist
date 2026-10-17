@@ -35,9 +35,13 @@ export const fromB64Url = (s) => b64decode(s.replace(/-/g, "+").replace(/_/g, "/
 
 /* ---------- crypto: PBKDF2 + AES-GCM ---------- */
 const subtle = crypto.subtle;
+const PBKDF2_ITERATIONS = 210000;
+const MIN_PBKDF2_ITERATIONS = 100000;
+const MAX_PBKDF2_ITERATIONS = 1000000;
 export const randomHex = (n = 16) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, "0")).join("");
+const randomBase64 = (n = 32) => bytesToB64(crypto.getRandomValues(new Uint8Array(n)));
 
-async function deriveKey(passphrase, saltB64, iterations = 210000) {
+async function deriveKey(passphrase, saltB64, iterations = PBKDF2_ITERATIONS) {
   const base = await subtle.importKey("raw", te.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
   return subtle.deriveKey(
     { name: "PBKDF2", salt: b64ToBytes(saltB64), iterations, hash: "SHA-256" },
@@ -50,14 +54,20 @@ export async function encryptJSON(value, passphrase) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(passphrase, salt);
   const ct = await subtle.encrypt({ name: "AES-GCM", iv }, key, te.encode(JSON.stringify(value)));
-  return { v: 1, kdf: "PBKDF2-SHA256", iter: 210000, salt, iv: bytesToB64(iv), data: bytesToB64(new Uint8Array(ct)) };
+  return { v: 1, kdf: "PBKDF2-SHA256", iter: PBKDF2_ITERATIONS, salt, iv: bytesToB64(iv), data: bytesToB64(new Uint8Array(ct)) };
 }
 export async function decryptJSON(env, passphrase) {
   try {
-    const key = await deriveKey(passphrase, env.salt, env.iter || 210000);
-    const pt = await subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(env.iv) }, key, b64ToBytes(env.data));
+    if (!env || typeof env !== "object") return null;
+    const iterations = env.iter === undefined ? PBKDF2_ITERATIONS : env.iter;
+    if (!Number.isSafeInteger(iterations) || iterations < MIN_PBKDF2_ITERATIONS || iterations > MAX_PBKDF2_ITERATIONS) return null;
+    if (env.kdf !== undefined && env.kdf !== "PBKDF2-SHA256") return null;
+    const salt = b64ToBytes(env.salt), iv = b64ToBytes(env.iv), data = b64ToBytes(env.data);
+    if (salt.length !== 16 || iv.length !== 12 || data.length < 16) return null;
+    const key = await deriveKey(passphrase, bytesToB64(salt), iterations);
+    const pt = await subtle.decrypt({ name: "AES-GCM", iv }, key, data);
     return JSON.parse(td.decode(pt));
-  } catch { return null; } // wrong passphrase or tampered data (GCM auth tag)
+  } catch { return null; } // wrong passphrase or tampered/invalid data (GCM auth tag)
 }
 /** Encrypt with a raw device key (used only for "remember this device"). */
 export async function encryptWithRawKey(value, rawKeyB64) {
@@ -65,6 +75,10 @@ export async function encryptWithRawKey(value, rawKeyB64) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await subtle.encrypt({ name: "AES-GCM", iv }, key, te.encode(JSON.stringify(value)));
   return { iv: bytesToB64(iv), data: bytesToB64(new Uint8Array(ct)) };
+}
+export async function createRememberedBundle(value) {
+  const key = randomBase64(32);
+  return { key, envelope: await encryptWithRawKey(value, key) };
 }
 export async function decryptWithRawKey(env, rawKeyB64) {
   try {
@@ -207,9 +221,9 @@ export const STR = {
     "connect.publish": "انتشار قفل رمزدار روی سایت", "connect.publishHint": "برای اینکه دستگاه‌های دیگه فقط با رمز سینک وصل بشن. فقط متن رمزنگاری‌شده منتشر می‌شه.",
     "connect.advancedNote": "فایل داده در یه شاخه جدا ذخیره می‌شه تا ساخت خودکار سایت گیت‌هاب رو به هم نریزه.",
     "connect.submit": "اتصال و ساخت رمز سینک",
-    "connect.fineOwner": "توکن فقط توی همین مرورگر و به‌صورت رمزنگاری‌شده داخل قفل سینک ذخیره می‌شه. هیچ‌جا ارسال نمی‌شه جز خود گیت‌هاب.",
+    "connect.fineOwner": "توکن فقط برای درخواست‌های API به گیت‌هاب فرستاده می‌شه و داخل قفل رمزنگاری‌شده نگه داشته می‌شه. با روشن‌کردن «به خاطر بسپار»، یک نسخه‌ی رمزنگاری‌شده هم روی همین مرورگر می‌مونه.",
     "connect.syncPass": "رمز سینک", "connect.joinSubmit": "باز کردن قفل و همگام‌سازی",
-    "connect.remember": "این دستگاه رو به خاطر بسپار", "connect.rememberHint": "دفعه بعد بدون رمز باز می‌شه. روی دستگاه مشترک خاموشش کن.",
+    "connect.remember": "این دستگاه رو به خاطر بسپار", "connect.rememberHint": "با روشن‌کردن، دفعه بعد بدون رمز باز می‌شه؛ فقط روی دستگاه شخصی و غیرمشترک.",
     "connect.haveCode": "کد دعوت یا لینک اختصاصی دارم", "connect.codeNote": "اگه قفل روی سایت منتشر نشده، کد رمزنگاری‌شده‌ای که صاحب لیست بهت داده رو اینجا بذار.",
     "connect.useCode": "استفاده از این کد", "connect.demo": "فعلاً با حالت نمایش بازی کن", "connect.footerNote": "بدون سرور · داده روی مخزن خودت",
     "connect.fineJoin": "رمز سینک رو از صاحب لیست بگیر. رمز اشتباه = قفل باز نمی‌شه و هیچ داده‌ای لو نمی‌ره.",
@@ -300,9 +314,9 @@ export const STR = {
     "connect.publish": "Publish the encrypted vault on the site", "connect.publishHint": "Lets other devices join with only the password. Only encrypted text is published.",
     "connect.advancedNote": "Data is stored on a separate branch so it never triggers site rebuilds.",
     "connect.submit": "Connect & create sync password",
-    "connect.fineOwner": "The token never leaves this browser except to GitHub itself, and is stored only inside the encrypted vault.",
+    "connect.fineOwner": "The token is sent to GitHub only for API requests and is kept in the encrypted vault. If you opt into Remember this device, an encrypted copy is also saved in this browser.",
     "connect.syncPass": "Sync password", "connect.joinSubmit": "Unlock & sync",
-    "connect.remember": "Remember this device", "connect.rememberHint": "Opens without a password next time. Turn off on shared devices.",
+    "connect.remember": "Remember this device", "connect.rememberHint": "If enabled, opens without a password next time. Only enable on a private device.",
     "connect.haveCode": "I have an invite code", "connect.codeNote": "If the vault isn't published on the site, paste the encrypted code the list owner gave you.",
     "connect.useCode": "Use this code", "connect.demo": "Play with demo mode for now", "connect.footerNote": "Serverless · data in your own repo",
     "connect.fineJoin": "Get the sync password from the list owner. Wrong password = the vault simply won't open.",
