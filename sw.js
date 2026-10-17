@@ -1,5 +1,5 @@
 /* Tadaa! service worker — offline shell. GitHub API is never cached. */
-const CACHE = "tadaa-v1";
+const CACHE = "tadaa-v2";
 const CORE = [
   "./", "./index.html", "./manifest.webmanifest",
   "./assets/css/base.css", "./assets/css/components.css", "./assets/css/animations.css",

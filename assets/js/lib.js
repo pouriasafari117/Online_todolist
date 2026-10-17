@@ -115,6 +115,62 @@ export function shareCodeToVault(code) {
   } catch { return null; }
 }
 
+/* ---------- GitHub token helpers (single-repo scoping) ---------- */
+const FINE_GRAINED_TOKEN = /^github_pat_[A-Za-z0-9_]+$/;
+const CLASSIC_TOKEN = /^gh[pousr]_[A-Za-z0-9]+$/;
+/** Classify a credential. Only fine-grained tokens can be limited to one repository. */
+export function tokenKind(token) {
+  const value = String(token ?? "").trim();
+  if (FINE_GRAINED_TOKEN.test(value)) return "fine-grained";
+  if (CLASSIC_TOKEN.test(value)) return "classic";
+  return "unknown";
+}
+function ownerRepo(owner, repo) {
+  if (!/^[\w.-]+$/.test(owner) || !/^[\w.-]+$/.test(repo)) return null;
+  return `${owner}/${repo}`;
+}
+/** Accept `owner/repo`, a github.com URL, a Pages URL, an scp-like URL, or a `.git` URL. */
+export function parseRepoInput(raw) {
+  let s = String(raw ?? "").trim();
+  if (!s) return null;
+  s = s.replace(/^git@([^:/\s]+):/i, "https://$1/").replace(/\.git$/i, "").replace(/\/+$/, "");
+  const pages = /^(?:https?:\/\/)?([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\.github\.io\/([^/?#\s]+)/i.exec(s);
+  if (pages) return ownerRepo(pages[1], pages[2]);
+  const ghUrl = /^(?:https?:\/\/)?(?:www\.)?github\.com\/([^/?#\s]+)\/([^/?#\s]+)/i.exec(s);
+  if (ghUrl) return ownerRepo(ghUrl[1], ghUrl[2]);
+  const bare = /^([^/?#\s]+)\/([^/?#\s]+)$/.exec(s);
+  if (bare) return ownerRepo(bare[1], bare[2]);
+  return null;
+}
+/** `https://<owner>.github.io/<repo>/` → `owner/repo`, so the site knows its own repository. */
+export function repoFromLocation(loc) {
+  const host = loc?.hostname || "";
+  const m = /^([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\.github\.io$/i.exec(host);
+  if (!m) return null;
+  const first = String(loc.pathname || "/").split("/").filter(Boolean)[0];
+  if (!first) return null;
+  let repo = first;
+  try { repo = decodeURIComponent(first); } catch {}
+  return ownerRepo(m[1], repo);
+}
+/**
+ * Link to GitHub's fine-grained token form with everything we can pre-fill already set:
+ * name, description, resource owner, expiration and `contents: write` (metadata read is implied).
+ * GitHub has no parameter for repository selection, so the user still has to pick
+ * "Only select repositories" → the repo, which the UI states explicitly.
+ */
+export function tokenCreateUrl({ owner, repo, days = 366 } = {}) {
+  if (!owner || !repo) return "https://github.com/settings/personal-access-tokens/new";
+  const query = new URLSearchParams({
+    name: `Tadaa! sync · ${repo}`.slice(0, 40),
+    description: `Tadaa! todo-list sync token. Repository access: "Only select repositories" → ${owner}/${repo}. Permission: Contents = Read and write. Nothing else.`,
+    target_name: owner,
+    expires_in: String(days),
+    contents: "write",
+  });
+  return `https://github.com/settings/personal-access-tokens/new?${query.toString()}`;
+}
+
 /* ---------- GitHub REST client (Contents API) ---------- */
 export class GhError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -142,6 +198,40 @@ export class GitHub {
     return res.status === 204 ? null : res.json();
   }
   repoInfo(repo) { return this.req(`/repos/${repo}`); }
+  /** HEAD-style call used only to read response headers (CORS exposes `X-OAuth-Scopes`). */
+  async head(path) {
+    let res;
+    try {
+      res = await fetch("https://api.github.com" + path, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+          ...(this.token ? { Authorization: "Bearer " + this.token } : {}),
+        },
+      });
+    } catch { throw new GhError(0, "network"); }
+    return { status: res.status, headers: res.headers };
+  }
+  /** Scopes of a classic/OAuth token; empty for fine-grained tokens and anonymous calls. */
+  async oauthScopes() {
+    const { headers } = await this.head("/user");
+    return (headers.get("x-oauth-scopes") || "").split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  /**
+   * Every repository this credential can actually reach, or null when the endpoint
+   * is unavailable to it. A token limited to one repo returns just that repo, which is
+   * how we prove the credential is scoped to this list and nothing else.
+   */
+  async accessibleRepos(limit = 100) {
+    try {
+      const list = await this.req(`/user/repos?per_page=${limit}&sort=full_name&direction=asc`);
+      if (!Array.isArray(list)) return null;
+      return list.map((r) => r.full_name).filter(Boolean);
+    } catch (e) {
+      if (e.status === 403 || e.status === 404) return null; // endpoint not granted to this token
+      throw e;
+    }
+  }
   async getFile(repo, path, ref) {
     const q = ref ? `?ref=${encodeURIComponent(ref)}` : "";
     try {
@@ -165,6 +255,38 @@ export class GitHub {
       method: "POST", body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: src.object.sha }),
     });
   }
+}
+
+/**
+ * Prove a credential can reach this repository — and nothing else.
+ * Classic tokens always cover every repository the user owns, so they are refused.
+ * For fine-grained tokens we ask GitHub which repositories the credential reaches,
+ * then confirm the target repository itself is visible.
+ * @returns {{ok:boolean, reason?:string, others:string[]}} reason: classic | unknown | broad | no-repo
+ */
+export async function auditTokenScope(client, token, repo) {
+  const kind = tokenKind(token);
+  if (kind === "classic") return { ok: false, reason: "classic", others: [] };
+  if (kind === "unknown") return { ok: false, reason: "unknown", others: [] };
+  try {
+    if ((await client.oauthScopes()).includes("repo")) return { ok: false, reason: "classic", others: [] };
+  } catch { /* no scope header (fine-grained token) — the repository check below still applies */ }
+  let others = null;
+  try {
+    const repos = await client.accessibleRepos();
+    if (Array.isArray(repos)) others = repos.filter((r) => String(r).toLowerCase() !== String(repo).toLowerCase());
+  } catch { /* listing unavailable — the repository check below still applies */ }
+  // the repository itself comes first: "your token is not for this repo" is more useful
+  // (and not overridable) than "your token is wider than it needs to be"
+  let info = null;
+  try {
+    info = await client.repoInfo(repo);
+  } catch (e) {
+    if (e.status === 404) return { ok: false, reason: "no-repo", others: others || [] };
+    throw e;
+  }
+  if (others && others.length) return { ok: false, reason: "broad", others, info };
+  return { ok: true, others: others || [], info };
 }
 
 /* ---------- i18n ---------- */
@@ -215,6 +337,16 @@ export const STR = {
     "connect.ownerIntro": "یه توکن گیت‌هاب بساز، اینجا بذار، و یه رمز سینک انتخاب کن. از این به بعد همه دستگاه‌ها با همون رمز به لیستت می‌رسن.",
     "connect.tokenHelp": "چطور توکن بسازم؟", "connect.repo": "مخزن گیت‌هاب", "connect.device": "اسم این دستگاه",
     "connect.token": "توکن دسترسی (Fine-grained)",
+    "token.recipeTitle": "توکن فقط برای همین یک مخزن",
+    "token.recipeLead": "با این لینک، گیت‌هاب خودش اسم، انقضا و دسترسی Contents رو پُر می‌کنه؛ تو فقط دو کلیک داری:",
+    "token.step1": "در Repository access گزینه «Only select repositories» را انتخاب کن.",
+    "token.step2": "فقط همین مخزن را انتخاب کن:",
+    "token.step3": "در Repository permissions فقط Contents را روی «Read and write» بگذار.",
+    "token.makeBtn": "ساخت توکن در گیت‌هاب (پُرشده)",
+    "token.copyRepo": "کپی نام مخزن",
+    "token.recipeNote": "توکن کلاسیک (ghp_…) قبول نمی‌شود چون به همهٔ مخزن‌های تو دسترسی می‌دهد.",
+    "token.fixBtn": "ساخت توکن درست برای همین مخزن",
+    "token.override": "می‌دونم؛ با همین توکن ادامه بده",
     "connect.pass": "رمز سینک", "connect.passHint": "حداقل ۱۰ کاراکتر؛ چند کلمه تصادفی بهترین گزینه‌ست.", "connect.pass2": "تکرار رمز",
     "connect.encrypt": "داده‌ها رمزنگاری بشن", "connect.encryptHint": "پیشنهاد می‌شه؛ حتی اگه مخزن عمومی باشه، متن کارها دیده نمی‌شه.",
     "connect.advanced": "تنظیمات پیشرفته", "connect.branch": "شاخه داده", "connect.path": "مسیر فایل",
@@ -251,6 +383,11 @@ export const STR = {
     "err.badCode": "این کد دعوت معتبر نیست.", "err.badToken": "توکن قبول نشد. مطمئن شو Fine-grained ـه و دسترسی Contents داره.",
     "err.forbidden": "توکن به این مخزن دسترسی نوشتن نداره.", "err.network": "به اینترنت یا گیت‌هاب وصل نشد. دوباره تلاش کن.",
     "err.repoAccess": "به این مخزن دسترسی نداری؛ اسم مخزن یا دسترسی توکن رو چک کن.",
+    "err.classicToken": "این توکن کلاسیکه و به همهٔ مخزن‌های تو دسترسی داره. توکن Fine-grained فقط برای همین یک مخزن بساز.",
+    "err.tokenBroad": "این توکن فقط به همین مخزن محدود نیست؛ به این مخزن‌ها هم دسترسی داره: {repos}",
+    "err.tokenNoRepo": "این توکن برای مخزن {repo} ساخته نشده و بهش دسترسی نداره.",
+    "err.tokenNoRepoList": "مخزن‌هایی که این توکن الان می‌بینه: {repos}",
+    "err.tokenUnknown": "این رشته شبیه توکن گیت‌هاب نیست. توکن‌های Fine-grained با github_pat_ شروع می‌شن.",
     "confirm.clearDone": "همه کارهای انجام‌شده پاک بشن؟", "confirm.disconnect": "اتصال این دستگاه قطع بشه؟ کارها روی گیت‌هاب می‌مونن، فقط این مرورگر جدا می‌شه.",
     "confirm.deleteTask": "این کار برای همیشه حذف بشه؟", "confirm.title": "مطمئنی؟",
     "pill.demo": "حالت نمایش", "pill.syncing": "در حال همگام‌سازی…", "pill.synced": "همگام شد", "pill.locked": "قفل‌شده", "pill.error": "خطای سینک", "pill.offline": "آفلاین",
@@ -308,6 +445,16 @@ export const STR = {
     "connect.ownerIntro": "Create a GitHub token, paste it here, and pick a sync password. Every other device joins with just that password.",
     "connect.tokenHelp": "How do I make a token?", "connect.repo": "GitHub repository", "connect.device": "This device's name",
     "connect.token": "Access token (Fine-grained)",
+    "token.recipeTitle": "A token for this one repository only",
+    "token.recipeLead": "This link makes GitHub pre-fill the name, expiration and Contents permission. You only have to make two choices:",
+    "token.step1": "Under Repository access pick “Only select repositories”.",
+    "token.step2": "Select just this repository:",
+    "token.step3": "Under Repository permissions set Contents to “Read and write” — nothing else.",
+    "token.makeBtn": "Create the token on GitHub (pre-filled)",
+    "token.copyRepo": "Copy repo name",
+    "token.recipeNote": "Classic tokens (ghp_…) are rejected: they reach every repository you own.",
+    "token.fixBtn": "Create a token scoped to this repo",
+    "token.override": "I know — continue with this token anyway",
     "connect.pass": "Sync password", "connect.passHint": "At least 10 characters; a few random words work best.", "connect.pass2": "Repeat password",
     "connect.encrypt": "Encrypt the data", "connect.encryptHint": "Recommended — task text stays hidden even in a public repo.",
     "connect.advanced": "Advanced", "connect.branch": "Data branch", "connect.path": "File path",
@@ -344,6 +491,11 @@ export const STR = {
     "err.badCode": "That invite code isn't valid.", "err.badToken": "Token rejected. Make sure it's fine-grained with Contents access.",
     "err.forbidden": "This token can't write to that repository.", "err.network": "Couldn't reach the internet or GitHub. Try again.",
     "err.repoAccess": "No access to that repo — check the name or the token's repositories.",
+    "err.classicToken": "That's a classic token, so it reaches every repository you own. Create a fine-grained token for this one repo instead.",
+    "err.tokenBroad": "This token isn't limited to this repo — it can also reach: {repos}",
+    "err.tokenNoRepo": "This token wasn't created for {repo}, so it can't reach it.",
+    "err.tokenNoRepoList": "Repositories this token can currently see: {repos}",
+    "err.tokenUnknown": "That doesn't look like a GitHub token. Fine-grained tokens start with github_pat_.",
     "confirm.clearDone": "Delete all completed tasks?", "confirm.disconnect": "Disconnect this device? Tasks stay on GitHub; only this browser detaches.",
     "confirm.deleteTask": "Delete this task forever?", "confirm.title": "Are you sure?",
     "pill.demo": "Demo mode", "pill.syncing": "Syncing…", "pill.synced": "Synced", "pill.locked": "Locked", "pill.error": "Sync error", "pill.offline": "Offline",
