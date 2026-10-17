@@ -51,8 +51,8 @@
 
 /* reduced motion */
 [data-motion="reduced"] *,[data-motion="reduced"] *::before,[data-motion="reduced"] *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.12s!important;scroll-behavior:auto!important}
-[data-motion="reduced"] .blob,[data-motion="reduced"] .ring-float{display:none}
+[data-motion="reduced"] .blob,[data-motion="reduced"] .ring-float,[data-motion="reduced"] .sparkle-field,[data-motion="reduced"] .cursor{display:none}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.12s!important;scroll-behavior:auto!important}
-  .blob,.ring-float{display:none}
+  .blob,.ring-float,.sparkle-field,.cursor{display:none}
 }

@@ -1,0 +1,28 @@
+name: Crypto regression tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "assets/js/app.js"
+      - "assets/js/lib.js"
+      - "tests/**"
+      - ".github/workflows/crypto-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "assets/js/app.js"
+      - "assets/js/lib.js"
+      - "tests/**"
+      - ".github/workflows/crypto-tests.yml"
+
+jobs:
+  test:
+    name: Browser crypto helpers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test tests/crypto.test.mjs
