@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-theme="light" data-motion="full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tadaa! — لیست کارهای رنگارنگ و همگام</title>
+  <meta name="description" content="یک تودولیست پاستیلی، سه‌بعدی و پرانیمیشن که داده‌هایش را روی گیت‌هاب نگه می‌دارد و بین همه دستگاه‌ها همگام می‌کند.">
+  <meta name="theme-color" content="#f5f0ff" id="themeColorMeta">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.github.com; manifest-src 'self'; worker-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Tadaa! — لیست کارهای رنگارنگ و همگام">
+  <meta property="og:description" content="یک تودولیست پاستیلی، سه‌بعدی و پرانیمیشن با همگام‌سازی روی گیت‌هاب.">
+  <meta property="og:image" content="./assets/img/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="./assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./assets/img/icon-180.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="preload" href="./assets/fonts/vazirmatn-arabic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/vazirmatn-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./assets/css/base.css">
+  <link rel="stylesheet" href="./assets/css/components.css">
+  <link rel="stylesheet" href="./assets/css/animations.css">
+  <script src="./assets/js/theme-init.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#taskList" data-i18n="a11y.skip">پرش به لیست کارها</a>
+
+  <!-- ===== Ambient world ===== -->
+  <div class="world" aria-hidden="true">
+    <div class="world__wash"></div>
+    <div class="blob blob--1"></div>
+    <div class="blob blob--2"></div>
+    <div class="blob blob--3"></div>
+    <div class="blob blob--4"></div>
+    <div class="world__grid"></div>
+    <div class="world__grain"></div>
+    <div class="sparkle-field" id="sparkleField"></div>
+    <div class="ring-float ring-float--1"></div>
+    <div class="ring-float ring-float--2"></div>
+    <div class="ring-float ring-float--3"></div>
+  </div>
+
+  <div class="boot" id="boot" aria-hidden="true">
+    <div class="boot__mark">
+      <span class="logo-cube logo-cube--boot">
+        <span class="logo-cube__face logo-cube__face--front"></span>
+        <span class="logo-cube__face logo-cube__face--top"></span>
+        <span class="logo-cube__face logo-cube__face--side"></span>
+        <svg class="logo-cube__check" viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>
+      </span>
+    </div>
+    <p class="boot__word">Tadaa!</p>
+    <div class="boot__bar"><span></span></div>
+  </div>
+
+  <div class="cursor" id="cursor" aria-hidden="true">
+    <span class="cursor__ring"></span>
+    <span class="cursor__dot"></span>
+  </div>
+  <div class="tap-ripples" id="tapRipples" aria-hidden="true"></div>
+  <canvas class="fx-canvas" id="fxCanvas" aria-hidden="true"></canvas>
+
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <a class="brand tilt" href="./" aria-label="Tadaa!">
+      <span class="logo-cube" aria-hidden="true">
+        <span class="logo-cube__face logo-cube__face--front"></span>
+        <span class="logo-cube__face logo-cube__face--top"></span>
+        <span class="logo-cube__face logo-cube__face--side"></span>
+        <svg class="logo-cube__check" viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>
+      </span>
+      <span class="brand__text">
+        <b class="brand__word">Tadaa!</b>
+        <small data-i18n="brand.tagline">لیست کارهای رنگی</small>
+      </span>
+    </a>
+
+    <div class="topbar__right">
+      <div class="date-chip" title="" id="dateChip">
+        <svg class="ico" aria-hidden="true"><use href="#i-sparkle"></use></svg>
+        <span id="dateText">امروز</span>
+      </div>
+      <button class="icon-btn theme-toggle" id="themeBtn" type="button" aria-label="تغییر تم" data-i18n-aria="a11y.theme">
+        <svg class="ico ico--sun" aria-hidden="true"><use href="#i-sun"></use></svg>
+        <svg class="ico ico--moon" aria-hidden="true"><use href="#i-moon"></use></svg>
+        <span class="theme-toggle__knob"></span>
+      </button>
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="تنظیمات" data-i18n-aria="a11y.settings">
+        <svg class="ico" aria-hidden="true"><use href="#i-gear"></use></svg>
+      </button>
+      <button class="sync-pill" id="syncBtn" type="button" data-state="demo" aria-haspopup="dialog">
+        <span class="sync-pill__dot"></span>
+        <span class="sync-pill__text" id="syncPillText">حالت نمایش</span>
+        <span class="sync-pill__spin" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="shell" id="shell">
+    <aside class="rail">
+      <!-- ===== Hero / dashboard ===== -->
+      <section class="panel hero reveal" data-reveal="1">
+        <div class="hero__top">
+          <div class="hero__hello">
+            <p class="eyebrow"><span class="eyebrow__dot"></span><span id="greetingText">سلام!</span></p>
+            <h1 class="hero__title">
+              <span data-i18n="hero.line1">امروز چی</span>
+              <span class="grad-text" data-i18n="hero.line2">می‌خوای بسازی؟</span>
+            </h1>
+            <p class="hero__sub" data-i18n="hero.sub">هر تیک، یه جشن کوچیکه.</p>
+          </div>
+          <div class="mascot" id="mascot" aria-hidden="true">
+            <span class="mascot__blob"></span>
+            <span class="mascot__eye mascot__eye--l"><i></i></span>
+            <span class="mascot__eye mascot__eye--r"><i></i></span>
+            <span class="mascot__mouth"></span>
+            <span class="mascot__blush mascot__blush--l"></span>
+            <span class="mascot__blush mascot__blush--r"></span>
+            <span class="mascot__sparkle">✦</span>
+          </div>
+        </div>
+
+        <div class="hero__stats">
+          <div class="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+              <defs>
+                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="var(--candy-1)"/>
+                  <stop offset="50%" stop-color="var(--candy-2)"/>
+                  <stop offset="100%" stop-color="var(--candy-3)"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring__track" cx="60" cy="60" r="50"/>
+              <circle class="ring__fill" id="progressRing" cx="60" cy="60" r="50"/>
+            </svg>
+            <div class="ring-wrap__center">
+              <b id="progressPct">۰٪</b>
+              <span data-i18n="stats.doneLabel">انجام‌شده</span>
+            </div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat">
+              <span class="stat__icon stat__icon--mint"><svg class="ico"><use href="#i-list"></use></svg></span>
+              <div><b id="statActive">۰</b><span data-i18n="stats.active">در جریان</span></div>
+            </div>
+            <div class="stat">
+              <span class="stat__icon stat__icon--peach"><svg class="ico"><use href="#i-check"></use></svg></span>
+              <div><b id="statDoneToday">۰</b><span data-i18n="stats.today">امروز</span></div>
+            </div>
+            <div class="stat">
+              <span class="stat__icon stat__icon--lemon"><svg class="ico"><use href="#i-flame"></use></svg></span>
+              <div><b id="statStreak">۰</b><span data-i18n="stats.streak">روز پیاپی</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="week" id="weekChart" aria-label="فعالیت هفت روز اخیر">
+          <div class="week__head">
+            <span data-i18n="stats.week">هفت روز اخیر</span>
+            <span class="week__total" id="weekTotal">۰</span>
+          </div>
+          <div class="week__bars" id="weekBars"></div>
+        </div>
+      </section>
+
+      <!-- ===== Composer ===== -->
+      <section class="panel composer reveal" data-reveal="2">
+        <div class="composer__head">
+          <h2><svg class="ico"><use href="#i-sparkle"></use></svg><span data-i18n="composer.title">یه کار جدید</span></h2>
+          <button class="ghost-btn composer__tune" id="tuneBtn" type="button" aria-expanded="false" aria-label="گزینه‌های بیشتر">
+            <svg class="ico"><use href="#i-sliders"></use></svg>
+          </button>
+        </div>
+        <form id="addForm" autocomplete="off">
+          <div class="composer__field">
+            <input id="newTitle" class="composer__input" type="text" maxlength="180" required
+                   data-i18n-placeholder="composer.placeholder" placeholder="مثلاً: یه قهوه بخور و پروژه رو شروع کن…">
+            <button class="add-btn" id="addBtn" type="submit" aria-label="اضافه کردن">
+              <svg class="ico"><use href="#i-plus"></use></svg>
+              <span class="add-btn__spark"></span>
+            </button>
+          </div>
+          <div class="composer__quick">
+            <div class="prio-pick" role="radiogroup" aria-label="اولویت">
+              <button type="button" class="prio-dot" data-prio="high" role="radio" aria-checked="false" title="فوری">
+                <span></span><em data-i18n="prio.high">فوری</em>
+              </button>
+              <button type="button" class="prio-dot is-on" data-prio="normal" role="radio" aria-checked="true" title="معمولی">
+                <span></span><em data-i18n="prio.normal">معمولی</em>
+              </button>
+              <button type="button" class="prio-dot" data-prio="low" role="radio" aria-checked="false" title="آروم">
+                <span></span><em data-i18n="prio.low">آروم</em>
+              </button>
+            </div>
+            <label class="mini-field" title="موعد">
+              <svg class="ico"><use href="#i-calendar"></use></svg>
+              <input type="date" id="newDue">
+            </label>
+          </div>
+          <div class="composer__more" id="composerMore" hidden>
+            <label class="mini-field mini-field--grow">
+              <svg class="ico"><use href="#i-tag"></use></svg>
+              <input type="text" id="newTags" maxlength="120" data-i18n-placeholder="composer.tags" placeholder="برچسب‌ها با ویرگول: کار، خانه">
+            </label>
+            <span class="kbd-hint"><kbd>Enter</kbd> <span data-i18n="composer.enter">برای اضافه کردن</span></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- ===== Sync mini card ===== -->
+      <section class="panel sync-card reveal" data-reveal="3" id="syncCard">
+        <div class="sync-card__icon" aria-hidden="true">
+          <svg class="ico ico--cloud"><use href="#i-cloud"></use></svg>
+          <span class="sync-card__ping"></span>
+        </div>
+        <div class="sync-card__body">
+          <h3 id="syncCardTitle" data-i18n="sync.demoTitle">داده‌ها فقط روی این دستگاهه</h3>
+          <p id="syncCardText" data-i18n="sync.demoText">با یه توکن گیت‌هاب، لیستت رو بین همه دستگاه‌ها همگام کن.</p>
+          <button class="tiny-btn" id="syncCardBtn" type="button" data-i18n="sync.connect">اتصال به گیت‌هاب</button>
+        </div>
+        <span class="sync-card__art" aria-hidden="true"></span>
+      </section>
+    </aside>
+
+    <!-- ===== Task area ===== -->
+    <section class="content">
+      <div class="toolbar panel reveal" data-reveal="4">
+        <div class="segmented" id="filterBar" role="tablist" aria-label="فیلتر">
+          <span class="segmented__pill" id="filterPill"></span>
+          <button class="segmented__btn is-on" data-filter="all" role="tab" aria-selected="true"><span data-i18n="filter.all">همه</span><b id="countAll">۰</b></button>
+          <button class="segmented__btn" data-filter="active" role="tab" aria-selected="false"><span data-i18n="filter.active">در جریان</span><b id="countActive">۰</b></button>
+          <button class="segmented__btn" data-filter="done" role="tab" aria-selected="false"><span data-i18n="filter.done">انجام‌شده</span><b id="countDone">۰</b></button>
+        </div>
+        <div class="toolbar__tools">
+          <label class="search">
+            <svg class="ico"><use href="#i-search"></use></svg>
+            <input id="searchInput" type="search" data-i18n-placeholder="filter.search" placeholder="جستجو…" autocomplete="off">
+            <button type="button" class="search__clear" id="searchClear" aria-label="پاک کردن جستجو"><svg class="ico"><use href="#i-x"></use></svg></button>
+          </label>
+          <label class="sort-select" title="مرتب‌سازی">
+            <svg class="ico"><use href="#i-sort"></use></svg>
+            <select id="sortSelect" aria-label="مرتب‌سازی">
+              <option value="manual" data-i18n="sort.manual">دستی</option>
+              <option value="due" data-i18n="sort.due">موعد</option>
+              <option value="priority" data-i18n="sort.priority">اولویت</option>
+              <option value="new" data-i18n="sort.new">جدیدترین</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="list-head reveal" data-reveal="5">
+        <div class="list-head__left">
+          <h2 id="listTitle" data-i18n="list.activeTitle">در جریان</h2>
+          <span class="list-head__count" id="activeCountLabel">۰ کار</span>
+        </div>
+        <div class="list-head__hint"><span class="pulse-dot"></span><span data-i18n="list.live">همیشه با تو</span></div>
+      </div>
+
+      <div class="task-list" id="taskList" role="list" aria-live="polite"></div>
+
+      <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-state__art" aria-hidden="true">
+          <span class="empty-blob"></span>
+          <span class="empty-face">◡̈</span>
+          <span class="empty-spark empty-spark--1">✦</span>
+          <span class="empty-spark empty-spark--2">✧</span>
+        </div>
+        <h3 id="emptyTitle" data-i18n="empty.title">اینجا خالیه، مثل یه بوم سفید</h3>
+        <p id="emptyText" data-i18n="empty.text">اولین کارت رو اضافه کن تا جادو شروع بشه.</p>
+        <button class="tiny-btn" id="emptyAddBtn" type="button" data-i18n="empty.cta">شروع کن</button>
+      </div>
+
+      <section class="done-block" id="doneBlock" hidden>
+        <button class="done-block__head" id="doneToggle" type="button" aria-expanded="true">
+          <span class="done-block__chev"><svg class="ico"><use href="#i-chevron"></use></svg></span>
+          <span data-i18n="list.doneTitle">انجام‌شده</span>
+          <b id="doneCountLabel">۰</b>
+          <span class="done-block__line"></span>
+          <span class="done-block__clear" id="clearDoneBtn" role="button" tabindex="0" data-i18n="list.clearDone">پاک کردن</span>
+        </button>
+        <div class="task-list task-list--done" id="doneList" role="list"></div>
+      </section>
+
+      <footer class="foot">
+        <span class="foot__made"><span data-i18n="foot.made">ساخته‌شده با</span> <span class="foot__heart">♥</span> <span data-i18n="foot.and">و کلی انیمیشن</span></span>
+        <span class="foot__spacer"></span>
+        <a class="foot__link" id="repoLink" href="https://github.com/pouriasafari117/Online_todolist" target="_blank" rel="noopener noreferrer">
+          <svg class="ico"><use href="#i-github"></use></svg><span>GitHub</span>
+        </a>
+        <button class="foot__link" id="helpBtn" type="button"><svg class="ico"><use href="#i-keyboard"></use></svg><span data-i18n="foot.shortcuts">کلیدها</span></button>
+      </footer>
+    </section>
+  </main>
+
+  <!-- ===== Edit task ===== -->
+  <dialog class="modal modal--task" id="taskDialog" aria-labelledby="taskDialogTitle">
+    <form id="taskForm" class="modal__inner" autocomplete="off">
+      <header class="modal__head">
+        <div class="modal__title-wrap">
+          <span class="modal__badge"><svg class="ico"><use href="#i-pencil"></use></svg></span>
+          <h2 id="taskDialogTitle" data-i18n="task.editTitle">ویرایش کار</h2>
+        </div>
+        <button type="button" class="icon-btn icon-btn--sm" data-close aria-label="بستن"><svg class="ico"><use href="#i-x"></use></svg></button>
+      </header>
+      <div class="modal__body">
+        <label class="field">
+          <span data-i18n="task.title">عنوان</span>
+          <input id="editTitle" type="text" maxlength="180" required>
+        </label>
+        <label class="field">
+          <span data-i18n="task.notes">یادداشت</span>
+          <textarea id="editNotes" rows="3" maxlength="1200" data-i18n-placeholder="task.notesPh" placeholder="جزئیات، لینک، هر چیزی که کمکت می‌کنه…"></textarea>
+        </label>
+        <div class="field-row">
+          <div class="field">
+            <span data-i18n="task.priority">اولویت</span>
+            <div class="prio-pick prio-pick--pad" id="editPrio" role="radiogroup">
+              <button type="button" class="prio-dot" data-prio="high" role="radio"><span></span><em data-i18n="prio.high">فوری</em></button>
+              <button type="button" class="prio-dot is-on" data-prio="normal" role="radio"><span></span><em data-i18n="prio.normal">معمولی</em></button>
+              <button type="button" class="prio-dot" data-prio="low" role="radio"><span></span><em data-i18n="prio.low">آروم</em></button>
+            </div>
+          </div>
+          <label class="field">
+            <span data-i18n="task.due">موعد</span>
+            <input id="editDue" type="date">
+          </label>
+        </div>
+        <div class="due-quick" id="dueQuick">
+          <button type="button" data-days="0" data-i18n="due.today">امروز</button>
+          <button type="button" data-days="1" data-i18n="due.tomorrow">فردا</button>
+          <button type="button" data-days="7" data-i18n="due.week">یه هفته دیگه</button>
+          <button type="button" data-days="clear" data-i18n="due.clear">بدون موعد</button>
+        </div>
+        <label class="field">
+          <span data-i18n="task.tags">برچسب‌ها</span>
+          <input id="editTags" type="text" maxlength="160" data-i18n-placeholder="task.tagsPh" placeholder="با ویرگول جدا کن">
+        </label>
+      </div>
+      <footer class="modal__foot modal__foot--split">
+        <button type="button" class="danger-btn" id="taskDeleteBtn"><svg class="ico"><use href="#i-trash"></use></svg><span data-i18n="task.delete">حذف</span></button>
+        <div class="modal__foot-end">
+          <button type="button" class="ghost-btn" data-close data-i18n="common.cancel">انصراف</button>
+          <button type="submit" class="primary-btn"><span data-i18n="common.save">ذخیره</span><svg class="ico"><use href="#i-check"></use></svg></button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ===== Settings ===== -->
+  <dialog class="modal modal--settings" id="settingsDialog" aria-labelledby="settingsTitle">
+    <div class="modal__inner">
+      <header class="modal__head">
+        <div class="modal__title-wrap">
+          <span class="modal__badge modal__badge--pink"><svg class="ico"><use href="#i-gear"></use></svg></span>
+          <h2 id="settingsTitle" data-i18n="settings.title">تنظیمات</h2>
+        </div>
+        <button type="button" class="icon-btn icon-btn--sm" data-close aria-label="بستن"><svg class="ico"><use href="#i-x"></use></svg></button>
+      </header>
+      <div class="settings-tabs" role="tablist">
+        <button class="is-on" data-stab="look" role="tab" aria-selected="true"><svg class="ico"><use href="#i-palette"></use></svg><span data-i18n="settings.look">ظاهر</span></button>
+        <button data-stab="sync" role="tab" aria-selected="false"><svg class="ico"><use href="#i-cloud"></use></svg><span data-i18n="settings.sync">همگام‌سازی</span></button>
+        <button data-stab="about" role="tab" aria-selected="false"><svg class="ico"><use href="#i-info"></use></svg><span data-i18n="settings.about">درباره</span></button>
+      </div>
+      <div class="modal__body settings-body">
+        <section class="settings-pane is-on" data-pane="look">
+          <div class="setting-row">
+            <div class="setting-row__label">
+              <b data-i18n="settings.theme">تم</b>
+              <span data-i18n="settings.themeHint">روز، شب یا هماهنگ با سیستم</span>
+            </div>
+            <div class="seg-mini" id="themeChoice">
+              <button data-theme-choice="auto" data-i18n="settings.auto">خودکار</button>
+              <button data-theme-choice="light" data-i18n="settings.day">روز</button>
+              <button data-theme-choice="dark" data-i18n="settings.night">شب</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__label">
+              <b data-i18n="settings.lang">زبان</b>
+              <span data-i18n="settings.langHint">فارسی یا انگلیسی</span>
+            </div>
+            <div class="seg-mini" id="langChoice">
+              <button data-lang-choice="fa">فارسی</button>
+              <button data-lang-choice="en">English</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__label">
+              <b data-i18n="settings.motion">انیمیشن‌ها</b>
+              <span data-i18n="settings.motionHint">اگر دستگاهت ضعیفه، کمشون کن</span>
+            </div>
+            <button class="switch" id="motionSwitch" role="switch" aria-checked="true"><span></span></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__label">
+              <b data-i18n="settings.sound">صداهای شیطون</b>
+              <span data-i18n="settings.soundHint">تیک‌ها و کلیک‌ها صدا داشته باشن</span>
+            </div>
+            <button class="switch" id="soundSwitch" role="switch" aria-checked="false"><span></span></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row__label">
+              <b data-i18n="settings.export">پشتیبان‌گیری</b>
+              <span data-i18n="settings.exportHint">یه فایل JSON از همه کارها بگیر</span>
+            </div>
+            <div class="btn-row">
+              <button class="ghost-btn" id="exportBtn" type="button"><svg class="ico"><use href="#i-download"></use></svg><span data-i18n="settings.exportBtn">خروجی</span></button>
+              <button class="ghost-btn" id="importBtn" type="button"><svg class="ico"><use href="#i-upload"></use></svg><span data-i18n="settings.importBtn">ورود</span></button>
+              <input type="file" id="importFile" accept="application/json,.json" hidden>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-pane" data-pane="sync">
+          <div class="sync-status-big" id="syncStatusBig">
+            <span class="sync-status-big__orb"><svg class="ico"><use href="#i-cloud"></use></svg></span>
+            <div>
+              <b id="settingsSyncTitle">حالت نمایش</b>
+              <p id="settingsSyncText" data-i18n="sync.settingsDemo">هنوز به گیت‌هاب وصل نیستی. کارها فقط روی همین مرورگر ذخیره می‌شن.</p>
+            </div>
+          </div>
+          <div class="sync-details" id="syncDetails" hidden>
+            <div class="sync-detail"><span data-i18n="sync.repo">مخزن</span><b id="detailRepo" dir="ltr">—</b></div>
+            <div class="sync-detail"><span data-i18n="sync.branch">شاخه داده</span><b id="detailBranch" dir="ltr">—</b></div>
+            <div class="sync-detail"><span data-i18n="sync.last">آخرین همگام‌سازی</span><b id="detailLast">—</b></div>
+            <div class="sync-detail"><span data-i18n="sync.fingerprint">شناسه سینک</span><b id="detailFingerprint" dir="ltr">—</b></div>
+          </div>
+          <div class="sync-actions">
+            <button class="primary-btn" id="syncNowBtn" type="button"><svg class="ico"><use href="#i-refresh"></use></svg><span data-i18n="sync.now">همگام‌سازی الان</span></button>
+            <button class="ghost-btn" id="inviteBtn" type="button"><svg class="ico"><use href="#i-user-plus"></use></svg><span data-i18n="sync.invite">دعوت دستگاه دیگه</span></button>
+            <button class="ghost-btn" id="changePassBtn" type="button"><svg class="ico"><use href="#i-key"></use></svg><span data-i18n="sync.changePass">تغییر رمز سینک</span></button>
+          </div>
+          <div class="notice notice--soft">
+            <svg class="ico"><use href="#i-shield"></use></svg>
+            <p data-i18n="sync.securityNote">توکن و داده‌ها با رمز سینک رمزنگاری می‌شن. رمز رو گم کنی، راهی برای بازیابی نیست؛ ولی می‌تونی از گیت‌هاب توکن جدید بسازی.</p>
+          </div>
+          <div class="settings-danger">
+            <button class="danger-btn danger-btn--ghost" id="disconnectBtn" type="button"><svg class="ico"><use href="#i-unlink"></use></svg><span data-i18n="sync.disconnect">قطع اتصال این دستگاه</span></button>
+          </div>
+        </section>
+
+        <section class="settings-pane" data-pane="about">
+          <div class="about-hero">
+            <span class="logo-cube logo-cube--about" aria-hidden="true">
+              <span class="logo-cube__face logo-cube__face--front"></span>
+              <span class="logo-cube__face logo-cube__face--top"></span>
+              <span class="logo-cube__face logo-cube__face--side"></span>
+              <svg class="logo-cube__check" viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>
+            </span>
+            <div>
+              <h3>Tadaa! <span class="about-ver">v1.0</span></h3>
+              <p data-i18n="about.tagline">تودولیست پاستیلی، سه‌بعدی و بدون سرور. داده‌ها روی گیت‌هابِ خودت زندگی می‌کنن.</p>
+            </div>
+          </div>
+          <h4 data-i18n="about.shortcuts">میان‌برهای کیبورد</h4>
+          <div class="kbd-grid">
+            <span><kbd>N</kbd> <em data-i18n="about.kbdNew">کار جدید</em></span>
+            <span><kbd>/</kbd> <em data-i18n="about.kbdSearch">جستجو</em></span>
+            <span><kbd>T</kbd> <em data-i18n="about.kbdTheme">تغییر تم</em></span>
+            <span><kbd>G</kbd> <em data-i18n="about.kbdSync">همگام‌سازی</em></span>
+            <span><kbd>?</kbd> <em data-i18n="about.kbdHelp">راهنما</em></span>
+            <span><kbd>Esc</kbd> <em data-i18n="about.kbdClose">بستن پنجره</em></span>
+          </div>
+          <h4 data-i18n="about.links">لینک‌ها</h4>
+          <div class="about-links">
+            <a href="https://github.com/pouriasafari117/Online_todolist" target="_blank" rel="noopener noreferrer" id="aboutRepoLink"><svg class="ico"><use href="#i-github"></use></svg><span data-i18n="about.source">سورس روی گیت‌هاب</span></a>
+            <a href="./docs/SETUP.html" target="_blank" rel="noopener"><svg class="ico"><use href="#i-book"></use></svg><span data-i18n="about.guide">راهنمای راه‌اندازی</span></a>
+          </div>
+          <p class="about-fine" data-i18n="about.fine">هیچ سروری، هیچ حسابی، هیچ ردیابی‌ای. فقط مرورگر تو + گیت‌هاب خودت. ☁️</p>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Connect / join ===== -->
+  <dialog class="modal modal--connect" id="connectDialog" aria-labelledby="connectTitle">
+    <div class="modal__inner">
+      <header class="modal__head">
+        <div class="modal__title-wrap">
+          <span class="modal__badge modal__badge--mint"><svg class="ico"><use href="#i-cloud"></use></svg></span>
+          <h2 id="connectTitle" data-i18n="connect.title">همگام‌سازی با گیت‌هاب</h2>
+        </div>
+        <button type="button" class="icon-btn icon-btn--sm" data-close aria-label="بستن"><svg class="ico"><use href="#i-x"></use></svg></button>
+      </header>
+      <div class="connect-tabs" role="tablist">
+        <button class="is-on" data-ctab="owner" role="tab" aria-selected="true"><span class="connect-tabs__num">۱</span><span data-i18n="connect.tabOwner">من صاحب لیستم</span></button>
+        <button data-ctab="join" role="tab" aria-selected="false"><span class="connect-tabs__num">۲</span><span data-i18n="connect.tabJoin">با رمز سینک وارد می‌شم</span></button>
+      </div>
+      <div class="modal__body connect-body">
+        <section class="connect-pane is-on" data-cpane="owner">
+          <div class="connect-intro">
+            <p data-i18n="connect.ownerIntro">یه توکن گیت‌هاب بساز، اینجا بذار، و یه رمز سینک انتخاب کن. از این به بعد همه دستگاه‌ها با همون رمز به لیستت می‌رسن.</p>
+            <a class="tiny-link" href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer"><svg class="ico"><use href="#i-external"></use></svg><span data-i18n="connect.tokenHelp">چطور توکن بسازم؟</span></a>
+          </div>
+          <div class="field-row">
+            <label class="field">
+              <span data-i18n="connect.repo">مخزن گیت‌هاب</span>
+              <div class="input-with-icon" dir="ltr">
+                <svg class="ico"><use href="#i-github"></use></svg>
+                <input id="repoInput" type="text" placeholder="username/Online_todolist" autocomplete="off" spellcheck="false">
+              </div>
+            </label>
+            <label class="field">
+              <span data-i18n="connect.device">اسم این دستگاه</span>
+              <input id="deviceNameInput" type="text" maxlength="40" placeholder="لپ‌تاپ من">
+            </label>
+          </div>
+          <label class="field">
+            <span class="field__row"><span data-i18n="connect.token">توکن دسترسی (Fine-grained)</span><span class="field__tag">Contents: R/W</span></span>
+            <div class="input-with-icon input-with-icon--end" dir="ltr">
+              <svg class="ico"><use href="#i-key"></use></svg>
+              <input id="tokenInput" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+              <button type="button" class="reveal-btn" data-reveal="tokenInput" aria-label="نمایش توکن"><svg class="ico"><use href="#i-eye"></use></svg></button>
+            </div>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span data-i18n="connect.pass">رمز سینک</span>
+              <div class="input-with-icon input-with-icon--end" dir="ltr">
+                <svg class="ico"><use href="#i-lock"></use></svg>
+                <input id="passInput" type="password" placeholder="••••••••••••" autocomplete="new-password">
+                <button type="button" class="reveal-btn" data-reveal="passInput" aria-label="نمایش رمز"><svg class="ico"><use href="#i-eye"></use></svg></button>
+              </div>
+              <span class="meter"><i id="passMeter"></i></span>
+              <span class="field__hint" id="passHint" data-i18n="connect.passHint">حداقل ۱۰ کاراکتر؛ چند کلمه تصادفی بهترین گزینه‌ست.</span>
+            </label>
+            <label class="field">
+              <span data-i18n="connect.pass2">تکرار رمز</span>
+              <div class="input-with-icon" dir="ltr">
+                <svg class="ico"><use href="#i-lock"></use></svg>
+                <input id="pass2Input" type="password" placeholder="••••••••••••" autocomplete="new-password">
+              </div>
+            </label>
+          </div>
+          <label class="checkline">
+            <input type="checkbox" id="encryptToggle" checked>
+            <span class="checkline__box"><svg class="ico"><use href="#i-check"></use></svg></span>
+            <span><b data-i18n="connect.encrypt">داده‌ها رمزنگاری بشن</b><small data-i18n="connect.encryptHint">پیشنهاد می‌شه؛ حتی اگه مخزن عمومی باشه، متن کارها دیده نمی‌شه.</small></span>
+          </label>
+          <details class="advanced">
+            <summary><svg class="ico"><use href="#i-sliders"></use></svg><span data-i18n="connect.advanced">تنظیمات پیشرفته</span><svg class="ico adv-chev"><use href="#i-chevron"></use></svg></summary>
+            <div class="advanced__body">
+              <div class="field-row">
+                <label class="field"><span data-i18n="connect.branch">شاخه داده</span><input id="branchInput" type="text" value="todolist-data" dir="ltr"></label>
+                <label class="field"><span data-i18n="connect.path">مسیر فایل</span><input id="pathInput" type="text" value="data/todos.json" dir="ltr"></label>
+              </div>
+              <label class="checkline checkline--small">
+                <input type="checkbox" id="publishToggle" checked>
+                <span class="checkline__box"><svg class="ico"><use href="#i-check"></use></svg></span>
+                <span><b data-i18n="connect.publish">انتشار قفل رمزدار روی سایت</b><small data-i18n="connect.publishHint">برای اینکه دستگاه‌های دیگه فقط با رمز سینک وصل بشن. فقط متن رمزنگاری‌شده منتشر می‌شه.</small></span>
+              </label>
+              <p class="advanced__note" data-i18n="connect.advancedNote">فایل داده در یه شاخه جدا ذخیره می‌شه تا ساخت خودکار سایت گیت‌هاب رو به هم نریزه.</p>
+            </div>
+          </details>
+          <div class="connect-error" id="ownerError" role="alert" hidden></div>
+          <button class="primary-btn primary-btn--wide" id="connectBtn" type="button">
+            <span class="btn-label" data-i18n="connect.submit">اتصال و ساخت رمز سینک</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+            <svg class="ico"><use href="#i-arrow"></use></svg>
+          </button>
+          <p class="fine-print" data-i18n="connect.fineOwner">توکن فقط توی همین مرورگر و به‌صورت رمزنگاری‌شده داخل قفل سینک ذخیره می‌شه. هیچ‌جا ارسال نمی‌شه جز خود گیت‌هاب.</p>
+        </section>
+
+        <section class="connect-pane" data-cpane="join">
+          <div class="vault-banner" id="vaultBanner" data-state="searching">
+            <span class="vault-banner__icon"><svg class="ico"><use href="#i-lock"></use></svg></span>
+            <div>
+              <b id="vaultBannerTitle">دنبال قفل سینک می‌گردم…</b>
+              <p id="vaultBannerText">صبر کن، دارم سایت رو نگاه می‌کنم.</p>
+            </div>
+            <span class="vault-banner__spin" aria-hidden="true"></span>
+          </div>
+          <label class="field">
+            <span data-i18n="connect.syncPass">رمز سینک</span>
+            <div class="input-with-icon input-with-icon--end" dir="ltr">
+              <svg class="ico"><use href="#i-lock"></use></svg>
+              <input id="joinPassInput" type="password" placeholder="••••••••••••" autocomplete="current-password">
+              <button type="button" class="reveal-btn" data-reveal="joinPassInput" aria-label="نمایش رمز"><svg class="ico"><use href="#i-eye"></use></svg></button>
+            </div>
+          </label>
+          <label class="checkline checkline--small">
+            <input type="checkbox" id="rememberToggle" checked>
+            <span class="checkline__box"><svg class="ico"><use href="#i-check"></use></svg></span>
+            <span><b data-i18n="connect.remember">این دستگاه رو به خاطر بسپار</b><small data-i18n="connect.rememberHint">دفعه بعد بدون رمز باز می‌شه. روی دستگاه مشترک خاموشش کن.</small></span>
+          </label>
+          <div class="connect-error" id="joinError" role="alert" hidden></div>
+          <button class="primary-btn primary-btn--wide" id="joinBtn" type="button">
+            <span class="btn-label" data-i18n="connect.joinSubmit">باز کردن قفل و همگام‌سازی</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+            <svg class="ico"><use href="#i-arrow"></use></svg>
+          </button>
+          <details class="advanced advanced--code">
+            <summary><svg class="ico"><use href="#i-key"></use></svg><span data-i18n="connect.haveCode">کد دعوت یا لینک اختصاصی دارم</span><svg class="ico adv-chev"><use href="#i-chevron"></use></svg></summary>
+            <div class="advanced__body">
+              <p class="advanced__note" data-i18n="connect.codeNote">اگه قفل روی سایت منتشر نشده، کد رمزنگاری‌شده‌ای که صاحب لیست بهت داده رو اینجا بذار.</p>
+              <textarea id="shareCodeInput" rows="4" dir="ltr" placeholder="TD1.eyJ2IjoxLC…" spellcheck="false"></textarea>
+              <button class="ghost-btn" id="useShareCodeBtn" type="button" data-i18n="connect.useCode">استفاده از این کد</button>
+            </div>
+          </details>
+          <p class="fine-print" data-i18n="connect.fineJoin">رمز سینک رو از صاحب لیست بگیر. رمز اشتباه = قفل باز نمی‌شه و هیچ داده‌ای لو نمی‌ره.</p>
+        </section>
+      </div>
+      <footer class="connect-foot">
+        <button class="link-btn" id="exploreDemoBtn" type="button" data-i18n="connect.demo">فعلاً با حالت نمایش بازی کن</button>
+        <span class="connect-foot__dot"></span>
+        <span class="connect-foot__note" data-i18n="connect.footerNote">بدون سرور · داده روی مخزن خودت</span>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- ===== Invite ===== -->
+  <dialog class="modal modal--invite" id="inviteDialog" aria-labelledby="inviteTitle">
+    <div class="modal__inner">
+      <header class="modal__head">
+        <div class="modal__title-wrap">
+          <span class="modal__badge modal__badge--lemon"><svg class="ico"><use href="#i-user-plus"></use></svg></span>
+          <h2 id="inviteTitle" data-i18n="invite.title">دعوت یه دستگاه دیگه</h2>
+        </div>
+        <button type="button" class="icon-btn icon-btn--sm" data-close aria-label="بستن"><svg class="ico"><use href="#i-x"></use></svg></button>
+      </header>
+      <div class="modal__body">
+        <p class="invite-lead" data-i18n="invite.lead">لینک سایت رو بفرست و رمز سینک رو جداگانه بگو. همین!</p>
+        <div class="invite-steps">
+          <div class="invite-step"><span>۱</span><p data-i18n="invite.step1">دستگاه دیگه لینک زیر رو باز کنه.</p></div>
+          <div class="invite-step"><span>۲</span><p data-i18n="invite.step2">تب «با رمز سینک وارد می‌شم» رو بزنه.</p></div>
+          <div class="invite-step"><span>۳</span><p data-i18n="invite.step3">رمز سینک رو وارد کنه — تمام!</p></div>
+        </div>
+        <label class="field">
+          <span data-i18n="invite.link">لینک سایت</span>
+          <div class="copy-field">
+            <input id="inviteLink" type="text" readonly dir="ltr">
+            <button type="button" class="copy-btn" data-copy="inviteLink"><svg class="ico"><use href="#i-copy"></use></svg><span data-i18n="common.copy">کپی</span></button>
+          </div>
+        </label>
+        <div class="invite-meta">
+          <span data-i18n="invite.fingerprint">شناسه سینک</span>
+          <b id="inviteFingerprint" dir="ltr">TADA-0000</b>
+          <span class="invite-meta__hint" data-i18n="invite.fingerprintHint">روی هر دو دستگاه باید یکی باشه.</span>
+        </div>
+        <div class="notice notice--warm">
+          <svg class="ico"><use href="#i-shield"></use></svg>
+          <p data-i18n="invite.warning">رمز سینک کلید دسترسی به مخزنه. فقط به آدم‌های مورد اعتماد بده و از پیام‌رسان امن استفاده کن.</p>
+        </div>
+        <div class="invite-actions">
+          <button class="primary-btn" id="copyInviteBtn" type="button"><svg class="ico"><use href="#i-copy"></use></svg><span data-i18n="invite.copyMsg">کپی متن دعوت</span></button>
+          <button class="ghost-btn" id="copyCodeBtn" type="button"><svg class="ico"><use href="#i-key"></use></svg><span data-i18n="invite.copyCode">کپی کد پشتیبان</span></button>
+        </div>
+        <p class="fine-print" data-i18n="invite.fine">رمز سینک هیچ‌جا ذخیره نمی‌شه؛ خودت باید یادت باشه.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Change password ===== -->
+  <dialog class="modal modal--small" id="passwordDialog" aria-labelledby="passwordTitle">
+    <form class="modal__inner" id="passwordForm" autocomplete="off">
+      <header class="modal__head">
+        <div class="modal__title-wrap">
+          <span class="modal__badge modal__badge--sky"><svg class="ico"><use href="#i-key"></use></svg></span>
+          <h2 id="passwordTitle" data-i18n="pass.title">رمز سینک جدید</h2>
+        </div>
+        <button type="button" class="icon-btn icon-btn--sm" data-close aria-label="بستن"><svg class="ico"><use href="#i-x"></use></svg></button>
+      </header>
+      <div class="modal__body">
+        <p class="fine-print fine-print--start" data-i18n="pass.lead">قفل رمزدار با رمز جدید دوباره ساخته می‌شه. دستگاه‌های دیگه باید رمز جدید رو وارد کنن.</p>
+        <label class="field">
+          <span data-i18n="connect.pass">رمز سینک</span>
+          <div class="input-with-icon input-with-icon--end" dir="ltr">
+            <svg class="ico"><use href="#i-lock"></use></svg>
+            <input id="newPassInput" type="password" autocomplete="new-password" required minlength="10" placeholder="••••••••••••">
+            <button type="button" class="reveal-btn" data-reveal="newPassInput" aria-label="نمایش رمز"><svg class="ico"><use href="#i-eye"></use></svg></button>
+          </div>
+          <span class="meter"><i id="newPassMeter"></i></span>
+        </label>
+        <label class="field">
+          <span data-i18n="connect.pass2">تکرار رمز</span>
+          <div class="input-with-icon" dir="ltr">
+            <svg class="ico"><use href="#i-lock"></use></svg>
+            <input id="newPass2Input" type="password" autocomplete="new-password" required minlength="10" placeholder="••••••••••••">
+          </div>
+        </label>
+        <div class="connect-error" id="passError" role="alert" hidden></div>
+      </div>
+      <footer class="modal__foot modal__foot--end">
+        <button type="button" class="ghost-btn" data-close data-i18n="common.cancel">انصراف</button>
+        <button type="submit" class="primary-btn"><span data-i18n="pass.submit">ساختن قفل جدید</span><svg class="ico"><use href="#i-lock"></use></svg></button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ===== Confirm ===== -->
+  <dialog class="modal modal--small" id="confirmDialog" aria-labelledby="confirmTitle">
+    <div class="modal__inner">
+      <header class="modal__head">
+        <div class="modal__title-wrap">
+          <span class="modal__badge modal__badge--peach"><svg class="ico"><use href="#i-alert"></use></svg></span>
+          <h2 id="confirmTitle">مطمئنی؟</h2>
+        </div>
+        <button type="button" class="icon-btn icon-btn--sm" data-close aria-label="بستن"><svg class="ico"><use href="#i-x"></use></svg></button>
+      </header>
+      <div class="modal__body">
+        <p id="confirmText"></p>
+      </div>
+      <footer class="modal__foot modal__foot--end">
+        <button type="button" class="ghost-btn" data-close data-i18n="common.cancel">انصراف</button>
+        <button type="button" class="danger-btn" id="confirmOk"><span data-i18n="common.confirm">بله، انجام بده</span></button>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- ===== Toasts ===== -->
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <!-- ===== Celebration ===== -->
+  <div class="celebration" id="celebration" hidden aria-hidden="true">
+    <div class="celebration__card">
+      <div class="celebration__emoji">🎉</div>
+      <h2 data-i18n="celebrate.title">تمومه! همه‌ش انجام شد.</h2>
+      <p data-i18n="celebrate.text">یه نفس عمیق بکش، به خودت افتخار کن.</p>
+      <button class="primary-btn" id="celebrateClose" type="button" data-i18n="celebrate.cta">دمت گرم!</button>
+    </div>
+  </div>
+
+  <!-- ===== Icons ===== -->
+  <svg class="svg-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.3 4.3l1.4 1.4M18.3 18.3l1.4 1.4M2.5 12h2M19.5 12h2M4.3 19.7l1.4-1.4M18.3 5.7l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/><path d="M17.5 4.5v2M16.5 5.5h2"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1.1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M6.5 19a4.5 4.5 0 0 1-.5-8.97A6 6 0 0 1 17.7 9.6 4.2 4.2 0 0 1 17.5 18"/><path d="M12 12v6M9.5 15.5 12 18l2.5-2.5"/></symbol>
+    <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="M6.5 19a4.5 4.5 0 0 1-.5-8.97 5.97 5.97 0 0 1 3.2-4.2M9.5 5.2A6 6 0 0 1 17.7 9.6 4.2 4.2 0 0 1 17.5 18"/><path d="M3 3l18 18"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.5-4.5L3 9"/><path d="M3 4v5h5"/><path d="M4 13a8 8 0 0 0 14.5 4.5L21 15"/><path d="M21 20v-5h-5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4l11.5-11.5a2.8 2.8 0 0 0-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5M14 11v5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="4"/><path d="M8 3v4M16 3v4M3.5 10h17"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.5 13.5 12 22 2.5 12.5V3H12l8.5 8.5a1.4 1.4 0 0 1 0 2Z"/><circle cx="7.5" cy="8" r="1.4"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16M14 6l6 6-6 6"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 2.5c.8 5.5 2.2 6.9 7.7 7.7-5.5.8-6.9 2.2-7.7 7.7-.8-5.5-2.2-6.9-7.7-7.7 5.5-.8 6.9-2.2 7.7-7.7Z"/><path d="M19 15c.4 2.3 1 2.9 3.3 3.3-2.3.4-2.9 1-3.3 3.3-.4-2.3-1-2.9-3.3-3.3 2.3-.4 2.9-1 3.3-3.3Z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="4"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="4"/><path d="M8 10V7a4 4 0 0 1 7.5-2M12 15v2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 .8A11.3 11.3 0 0 0 .7 12.1c0 5 3.2 9.2 7.7 10.7.6.1.8-.2.8-.5v-2c-3.1.7-3.8-1.3-3.8-1.3-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.7 1.2 3.3.9.1-.7.4-1.2.7-1.5-2.5-.3-5.1-1.2-5.1-5.4 0-1.2.4-2.2 1.1-3-.1-.3-.5-1.4.1-2.9 0 0 .9-.3 3 1.1a10.6 10.6 0 0 1 5.5 0c2.1-1.4 3-1.1 3-1.1.6 1.5.2 2.6.1 2.9.7.8 1.1 1.8 1.1 3 0 4.2-2.6 5.1-5.1 5.4.4.4.8 1 .8 2v3c0 .3.2.6.8.5a11.3 11.3 0 0 0 7.7-10.7A11.3 11.3 0 0 0 12 .8Z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="3"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M7 14h10"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-8 8M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2.5 20 6v6c0 5-3.4 8.3-8 9.5-4.6-1.2-8-4.5-8-9.5V6l8-3.5Z"/><path d="m8.5 12 2.5 2.5 4.5-4.5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5M12 17.2h.01"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-.8 2-1.8 0-1.4-1.4-1.7-1.4-3 0-1 .8-1.7 1.9-1.7H16a5 5 0 0 0 5-5C21 5.9 17 3 12 3Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14.5" cy="6.8" r="1"/><circle cx="17.3" cy="10" r="1"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.7 7-6.5 0-2.4-1.2-4.3-3-5.9-.6 2-1.6 2.8-2.6 3 .4-3.3-1-6-3.4-7.6.2 2.7-1.3 4.2-2.4 5.9A6.9 6.9 0 0 0 5 15.5C5 19.3 8 22 12 22Z"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24"><path d="M4 6h16M6 12h12M9 18h6"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+    <symbol id="i-user-plus" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6.5 7-6.5 2 0 3.7.6 5 1.7M19 8v6M16 11h6"/></symbol>
+    <symbol id="i-unlink" viewBox="0 0 24 24"><path d="M9 15 15 9M7.5 17.5l-1 1a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0M16.5 6.5l1-1a3.5 3.5 0 0 1 5 5l-3 3a3.5 3.5 0 0 1-5 0"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20M8 7h8M8 10.5h5"/></symbol>
+    <symbol id="i-drag" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5A5.5 5.5 0 0 1 20 14.5v0A5.5 5.5 0 0 1 14.5 20H11"/></symbol>
+    <symbol id="i-install" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 7v8M8.5 11.5 12 15l3.5-3.5M8 18h8"/></symbol>
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 15.5a5 5 0 0 1 7 0M5 12a11 11 0 0 1 3-2M19 12a11 11 0 0 0-4-2.6M2 8.5A16 16 0 0 1 7 6M22 8.5a16 16 0 0 0-6.5-2.2M12 19h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="4.5"/><path d="m11.2 12.3 8.3-8.3M17 6.5l3 3M14 9.5l2.5 2.5"/></symbol>
+  </svg>
+
+  <script type="module" src="./assets/js/app.js"></script>
+  <noscript><div class="noscript"><p>برای دیدن انیمیشن‌ها و لیست کارها، جاوااسکریپت رو روشن کن. ✨</p></div></noscript>
+</body>
+</html>

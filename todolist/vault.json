@@ -1,0 +1,4 @@
+{
+  "format": "tadaa-vault-pending",
+  "note": "No sync vault yet. The list owner replaces this file automatically when they connect GitHub sync and choose 'Publish the encrypted vault'. Until then, joining devices can use an invite code."
+}
