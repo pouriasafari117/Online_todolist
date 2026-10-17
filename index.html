@@ -55,7 +55,6 @@
   </div>
 
   <div class="cursor" id="cursor" aria-hidden="true">
-    <span class="cursor__ring"></span>
     <span class="cursor__dot"></span>
   </div>
   <div class="tap-ripples" id="tapRipples" aria-hidden="true"></div>
@@ -492,7 +491,26 @@
         <section class="connect-pane is-on" data-cpane="owner">
           <div class="connect-intro">
             <p data-i18n="connect.ownerIntro">یه توکن گیت‌هاب بساز، اینجا بذار، و یه رمز سینک انتخاب کن. از این به بعد همه دستگاه‌ها با همون رمز به لیستت می‌رسن.</p>
-            <a class="tiny-link" href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer"><svg class="ico"><use href="#i-external"></use></svg><span data-i18n="connect.tokenHelp">چطور توکن بسازم؟</span></a>
+          </div>
+          <div class="token-recipe" id="tokenRecipe">
+            <div class="token-recipe__head">
+              <svg class="ico"><use href="#i-key"></use></svg>
+              <b data-i18n="token.recipeTitle">توکن فقط برای همین یک مخزن</b>
+            </div>
+            <p class="token-recipe__lead" data-i18n="token.recipeLead">با این لینک، گیت‌هاب خودش اسم، انقضا و دسترسی Contents رو پُر می‌کنه؛ تو فقط دو انتخاب داری:</p>
+            <ol class="token-recipe__steps">
+              <li data-i18n="token.step1">در Repository access گزینه «Only select repositories» را انتخاب کن.</li>
+              <li>
+                <span data-i18n="token.step2">فقط همین مخزن را انتخاب کن:</span>
+                <code class="token-recipe__repo" id="tokenRepoChip" dir="ltr">—</code>
+                <button class="tiny-btn tiny-btn--sm" id="copyRepoBtn" type="button"><svg class="ico"><use href="#i-copy"></use></svg><span data-i18n="token.copyRepo">کپی نام مخزن</span></button>
+              </li>
+              <li data-i18n="token.step3">در Repository permissions فقط Contents را روی «Read and write» بگذار.</li>
+            </ol>
+            <a class="ghost-btn token-recipe__cta" id="tokenMakeLink" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">
+              <svg class="ico"><use href="#i-external"></use></svg><span data-i18n="token.makeBtn">ساخت توکن در گیت‌هاب (پُرشده)</span>
+            </a>
+            <p class="advanced__note token-recipe__note" data-i18n="token.recipeNote">توکن کلاسیک (ghp_…) قبول نمی‌شود چون به همهٔ مخزن‌های تو دسترسی می‌دهد.</p>
           </div>
           <div class="field-row">
             <label class="field">
@@ -560,6 +578,12 @@
             </div>
           </details>
           <div class="connect-error" id="ownerError" role="alert" hidden></div>
+          <div class="token-fix" id="tokenFixRow" hidden>
+            <a class="ghost-btn token-fix__link" id="tokenFixLink" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">
+              <svg class="ico"><use href="#i-external"></use></svg><span data-i18n="token.fixBtn">ساخت توکن درست برای همین مخزن</span>
+            </a>
+            <button class="link-btn" id="tokenOverrideBtn" type="button" data-i18n="token.override" hidden>می‌دونم؛ با همین توکن ادامه بده</button>
+          </div>
           <button class="primary-btn primary-btn--wide" id="connectBtn" type="button">
             <span class="btn-label" data-i18n="connect.submit">اتصال و ساخت رمز سینک</span>
             <span class="btn-spinner" aria-hidden="true"></span>

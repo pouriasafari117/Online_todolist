@@ -2,7 +2,7 @@ import {
   $, $$, uid, nowISO, clamp, debounce, CANDY, colorFor, escapeHtml,
   createVault, openVault, vaultToShareCode, shareCodeToVault, fingerprint,
   encryptJSON, decryptJSON, createRememberedBundle, decryptWithRawKey, randomHex,
-  GitHub, GhError, STR,
+  GitHub, GhError, STR, auditTokenScope, parseRepoInput, repoFromLocation, tokenCreateUrl,
 } from "./lib.js";
 
 /* ============================== state ============================== */
@@ -586,20 +586,74 @@ $("#useShareCodeBtn").addEventListener("click", () => {
   showError($("#joinError"), "");
 });
 
+/* ---------- token scoping: one repository, nothing else ---------- */
+const TOKEN_CREATE_BASE = "https://github.com/settings/personal-access-tokens/new";
+let tokenScopeOverride = false;
+
+function currentRepo() { return parseRepoInput($("#repoInput").value); }
+
+/** Keep the pre-filled GitHub links and the repo chip in step with the repository field. */
+function updateTokenRecipe() {
+  const repo = currentRepo();
+  const [owner, name] = repo ? repo.split("/") : ["", ""];
+  const url = repo ? tokenCreateUrl({ owner, repo: name }) : TOKEN_CREATE_BASE;
+  $("#tokenRepoChip").textContent = repo || "—";
+  $("#tokenMakeLink").href = url;
+  $("#tokenFixLink").href = url;
+}
+
+function hideTokenProblem() {
+  tokenScopeOverride = false;
+  $("#tokenFixRow").hidden = true;
+  $("#tokenOverrideBtn").hidden = true;
+}
+
+/** Report a scoping problem with the exact fix instead of a bare "no access". */
+function showTokenProblem({ reason, others = [] }, repo) {
+  const few = others.slice(0, 5).join("، ") + (others.length > 5 ? " …" : "");
+  let msg;
+  if (reason === "classic") msg = t("err.classicToken");
+  else if (reason === "broad") msg = t("err.tokenBroad").replace("{repos}", few);
+  else if (reason === "unknown") msg = t("err.tokenUnknown");
+  else {
+    msg = t("err.tokenNoRepo").replace("{repo}", repo);
+    if (few) msg += " " + t("err.tokenNoRepoList").replace("{repos}", few);
+  }
+  showError($("#ownerError"), msg);
+  updateTokenRecipe();
+  $("#tokenFixRow").hidden = false;
+  // a broad-but-fine-grained token still works; a classic one is never accepted
+  $("#tokenOverrideBtn").hidden = reason !== "broad";
+}
+
+$("#repoInput").addEventListener("input", debounce(() => { updateTokenRecipe(); hideTokenProblem(); }, 180));
+$("#tokenInput").addEventListener("input", hideTokenProblem);
+$("#copyRepoBtn").addEventListener("click", async () => {
+  const repo = currentRepo(); if (!repo) return;
+  try { await navigator.clipboard.writeText(repo); toast(t("toast.copied"), "success"); } catch {}
+});
+$("#tokenOverrideBtn").addEventListener("click", () => { tokenScopeOverride = true; $("#connectBtn").click(); });
+
 /* owner connect */
 $("#connectBtn").addEventListener("click", async () => {
   const err = $("#ownerError"); showError(err, "");
-  const repo = $("#repoInput").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
+  const repo = currentRepo();
   const token = $("#tokenInput").value.trim();
   const pass = $("#passInput").value, pass2 = $("#pass2Input").value;
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return showError(err, t("err.repo"));
+  if (!repo) return showError(err, t("err.repo"));
   if (!token) return showError(err, t("err.token"));
   if (pass.length < 10) return showError(err, t("err.passShort"));
   if (pass !== pass2) return showError(err, t("err.passMatch"));
   const btn = $("#connectBtn"); setBusy(btn, true);
   try {
     const client = new GitHub(token);
-    const info = await client.repoInfo(repo);
+    const audit = await auditTokenScope(client, token, repo);
+    if (!audit.ok && !(tokenScopeOverride && audit.reason === "broad")) {
+      showTokenProblem(audit, repo);
+      return;
+    }
+    hideTokenProblem();
+    const info = audit.info || await client.repoInfo(repo);
     const defaultBranch = info.default_branch || "main";
     const branch = $("#branchInput").value.trim() || "todolist-data";
     const path = $("#pathInput").value.trim() || "data/todos.json";
@@ -818,40 +872,26 @@ function buildSparkles() {
     field.appendChild(s);
   }
 }
-/* custom cursor + magnetic buttons */
+/* pointer dot + click ripples (the ring that used to circle the cursor is gone:
+   no per-frame easing loop and no hover listeners left behind) */
 (function cursorFx() {
   if (!matchMedia("(hover:hover) and (pointer:fine)").matches) return;
-  const cursor = $("#cursor"), ring = $(".cursor__ring"), dot = $(".cursor__dot");
-  let mx = -100, my = -100, rx = -100, ry = -100, frame = 0;
-  function animateRing() {
-    frame = 0;
-    if (isMotionReduced()) return;
-    const dx = mx - rx, dy = my - ry;
-    rx += dx * 0.16; ry += dy * 0.16;
-    ring.style.transform = `translate(${rx}px,${ry}px)`;
-    if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) frame = requestAnimationFrame(animateRing);
-  }
+  const dot = $(".cursor__dot");
   addEventListener("mousemove", (e) => {
     if (isMotionReduced()) return;
-    mx = e.clientX; my = e.clientY;
-    dot.style.transform = `translate(${mx}px,${my}px)`;
+    dot.style.transform = `translate(${e.clientX}px,${e.clientY}px)`;
     // gentle parallax on the ambient world
     const nx = (e.clientX / innerWidth - 0.5), ny = (e.clientY / innerHeight - 0.5);
     $("#sparkleField").style.transform = `translate(${nx * -14}px,${ny * -10}px)`;
     $(".world__grid").style.backgroundPosition = `${nx * 18}px ${ny * 14}px`;
-    if (!frame) frame = requestAnimationFrame(animateRing);
   }, { passive: true });
   addEventListener("mousedown", (e) => {
     if (isMotionReduced()) return;
-    cursor.classList.add("is-down");
     const ripple = document.createElement("i");
     ripple.style.left = e.clientX + "px"; ripple.style.top = e.clientY + "px";
     ripple.style.borderColor = CANDY[Math.floor(Math.random() * CANDY.length)];
     $("#tapRipples").appendChild(ripple); setTimeout(() => ripple.remove(), 750);
   });
-  addEventListener("mouseup", () => cursor.classList.remove("is-down"));
-  document.addEventListener("mouseover", (e) => { if (e.target.closest("button,a,input,select,textarea,.task,[role='switch']")) cursor.classList.add("is-hover"); });
-  document.addEventListener("mouseout", (e) => { if (e.target.closest("button,a,input,select,textarea,.task,[role='switch']")) cursor.classList.remove("is-hover"); });
 })();
 /* mascot personality */
 (function mascotFx() {
@@ -875,7 +915,9 @@ function buildSparkles() {
 /* ============================== boot / init ============================== */
 async function init() {
   applyTheme(); applyI18n(); updateHeader(); buildSparkles();
-  $("#repoInput").value = DEFAULT_REPO;
+  // the site knows which repository it is published from — no need to type it (or get it wrong)
+  $("#repoInput").value = repoFromLocation(location) || DEFAULT_REPO;
+  updateTokenRecipe();
   loadDemo(); renderAll(); renderSync();
   // reveal-on-load choreography
   const io = new IntersectionObserver((entries) => entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("is-in"); io.unobserve(en.target); } }), { threshold: 0.08 });
