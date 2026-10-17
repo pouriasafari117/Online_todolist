@@ -48,10 +48,7 @@ body{
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 a{color:inherit}
-/* Focus ring: shown for keyboard navigation, never painted for mouse/touch users.
-   `data-focus` is set by theme-init.js before first paint; with no JS the ring stays on. */
 :focus-visible{outline:3px solid var(--sky);outline-offset:2px;border-radius:8px}
-html[data-focus="pointer"] :focus-visible{outline:none}
 .ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .svg-sprite{position:absolute;width:0;height:0;overflow:hidden}
 .skip-link{position:fixed;top:-60px;inset-inline-start:16px;z-index:200;background:var(--panel-solid);padding:10px 18px;border-radius:999px;box-shadow:var(--shadow);transition:top .3s}
@@ -127,10 +124,8 @@ kbd{font-family:var(--font-display);font-size:.78em;background:var(--field-bg);b
 /* cursor fx */
 .cursor{position:fixed;top:0;left:0;z-index:250;pointer-events:none;display:none}
 @media(hover:hover) and (pointer:fine){.cursor{display:block}}
-.cursor__ring{position:absolute;width:34px;height:34px;margin:-17px;border-radius:50%;border:2px solid color-mix(in srgb,var(--violet) 65%,transparent);transition:width .25s,height .25s,margin .25s,background .25s,border-color .25s;will-change:transform}
+/* the pointer keeps only its dot — the ring that used to circle it is gone */
 .cursor__dot{position:absolute;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--pink)}
-.cursor.is-hover .cursor__ring{width:52px;height:52px;margin:-26px;background:color-mix(in srgb,var(--candy-1) 14%,transparent);border-color:var(--pink)}
-.cursor.is-down .cursor__ring{width:24px;height:24px;margin:-12px}
 .tap-ripples{position:fixed;inset:0;z-index:240;pointer-events:none;overflow:hidden}
 .tap-ripples i{position:absolute;border-radius:50%;border:2px solid var(--pink);transform:translate(-50%,-50%);animation:ripple .7s var(--ease-out) forwards}
 .fx-canvas{position:fixed;inset:0;z-index:230;pointer-events:none}

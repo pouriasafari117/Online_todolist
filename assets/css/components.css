@@ -314,7 +314,6 @@
 .checkline__box .ico{width:13px;height:13px;stroke-width:3.2}
 .checkline input:checked+.checkline__box{background:linear-gradient(140deg,var(--candy-4),#1db985);border-color:transparent;color:#fff;transform:rotate(-6deg) scale(1.08)}
 .checkline input:focus-visible+.checkline__box{outline:3px solid var(--sky);outline-offset:2px}
-html[data-focus="pointer"] .checkline input:focus-visible+.checkline__box{outline:none}
 .checkline b{display:block;font-size:.84rem}
 .checkline small{display:block;color:var(--ink-faint);font-weight:600;font-size:.73rem;line-height:1.7;margin-top:2px}
 .checkline--small b{font-size:.8rem}

@@ -872,40 +872,26 @@ function buildSparkles() {
     field.appendChild(s);
   }
 }
-/* custom cursor + magnetic buttons */
+/* pointer dot + click ripples (the ring that used to circle the cursor is gone:
+   no per-frame easing loop and no hover listeners left behind) */
 (function cursorFx() {
   if (!matchMedia("(hover:hover) and (pointer:fine)").matches) return;
-  const cursor = $("#cursor"), ring = $(".cursor__ring"), dot = $(".cursor__dot");
-  let mx = -100, my = -100, rx = -100, ry = -100, frame = 0;
-  function animateRing() {
-    frame = 0;
-    if (isMotionReduced()) return;
-    const dx = mx - rx, dy = my - ry;
-    rx += dx * 0.16; ry += dy * 0.16;
-    ring.style.transform = `translate(${rx}px,${ry}px)`;
-    if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) frame = requestAnimationFrame(animateRing);
-  }
+  const dot = $(".cursor__dot");
   addEventListener("mousemove", (e) => {
     if (isMotionReduced()) return;
-    mx = e.clientX; my = e.clientY;
-    dot.style.transform = `translate(${mx}px,${my}px)`;
+    dot.style.transform = `translate(${e.clientX}px,${e.clientY}px)`;
     // gentle parallax on the ambient world
     const nx = (e.clientX / innerWidth - 0.5), ny = (e.clientY / innerHeight - 0.5);
     $("#sparkleField").style.transform = `translate(${nx * -14}px,${ny * -10}px)`;
     $(".world__grid").style.backgroundPosition = `${nx * 18}px ${ny * 14}px`;
-    if (!frame) frame = requestAnimationFrame(animateRing);
   }, { passive: true });
   addEventListener("mousedown", (e) => {
     if (isMotionReduced()) return;
-    cursor.classList.add("is-down");
     const ripple = document.createElement("i");
     ripple.style.left = e.clientX + "px"; ripple.style.top = e.clientY + "px";
     ripple.style.borderColor = CANDY[Math.floor(Math.random() * CANDY.length)];
     $("#tapRipples").appendChild(ripple); setTimeout(() => ripple.remove(), 750);
   });
-  addEventListener("mouseup", () => cursor.classList.remove("is-down"));
-  document.addEventListener("mouseover", (e) => { if (e.target.closest("button,a,input,select,textarea,.task,[role='switch']")) cursor.classList.add("is-hover"); });
-  document.addEventListener("mouseout", (e) => { if (e.target.closest("button,a,input,select,textarea,.task,[role='switch']")) cursor.classList.remove("is-hover"); });
 })();
 /* mascot personality */
 (function mascotFx() {
